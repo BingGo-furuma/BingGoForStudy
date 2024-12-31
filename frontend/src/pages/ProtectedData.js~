@@ -1,0 +1,23 @@
+import React, { useEffect, useState } from 'react';
+import api from '../utils/api';
+
+const ProtectedData = () => {
+    const [message, setMessage] = useState('');
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await api.get('/users/protected/');
+                setMessage(response.data.message);
+            } catch (error) {
+                console.error('Failed to fetch protected data:', error);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    return <h3>{message || 'Loading...'}</h3>;
+};
+
+export default ProtectedData;

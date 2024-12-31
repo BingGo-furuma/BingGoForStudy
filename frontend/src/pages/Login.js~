@@ -1,0 +1,57 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { mockApi } from '../utils/mockApi'; // モックAPIをインポート
+
+
+const Login = () => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const navigate = useNavigate(); // React Router の navigate を使用
+    
+    
+    const handleLogin = async () => {
+        try {
+            const response = await mockApi.login(email, password); // モックAPIを使用
+            const { access, refresh } = response.data;
+
+            // トークンをローカルストレージに保存
+            localStorage.setItem('access_token', access);
+            localStorage.setItem('refresh_token', refresh);
+
+            // 認証ヘッダーを設定
+            setAuthToken(access);
+
+            alert('Login successful!');
+	    
+	    // ページ遷移
+            navigate('/bingo'); // 成功時に保護された画面に遷移
+
+
+	    
+        } catch (error) {
+            console.error('Login failed:', error);
+            alert('Invalid credentials!');
+        }
+    };
+
+    return (
+        <div>
+            <h2>Login</h2>
+            <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+            />
+            <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+            />
+            <button onClick={handleLogin}>Login</button>
+        </div>
+    );
+};
+
+export default Login;
