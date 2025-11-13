@@ -1,38 +1,217 @@
-.App {
-  text-align: center;
+:root {
+  color-scheme: light;
+  font-family: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  background-color: #f5f7fb;
+  color: #0f172a;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+body {
+  margin: 0;
+  background: #f5f7fb;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
+a {
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+}
+
+.dashboard-container {
+  padding: 24px;
+  max-width: 1080px;
+  margin: 0 auto;
+  display: grid;
+  gap: 24px;
+}
+
+.dashboard-grid {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 960px) {
+  .dashboard-grid {
+    grid-template-columns: 2fr 1fr;
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: rgba(15, 23, 42, 0.06) 0 20px 45px;
+}
+
+.card h2,
+.card h3 {
+  margin-top: 0;
+}
+
+.stat-grid {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 720px) {
+  .stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.stat-tile {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(37, 99, 235, 0.08));
+  border-radius: 16px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
+  gap: 4px;
+}
+
+.stat-tile strong {
+  font-size: 1.6rem;
+}
+
+.progress-bar {
+  width: 100%;
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.progress-bar__value {
+  height: 100%;
+  background: linear-gradient(135deg, #6366f1, #2563eb);
+}
+
+.bingo-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.bingo-cell {
+  border-radius: 14px;
+  padding: 18px 12px;
+  text-align: center;
+  font-weight: 600;
+  background: #ffffff;
+  border: 2px solid transparent;
+  box-shadow: rgba(15, 23, 42, 0.04) 0 6px 16px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.2s ease;
+}
+
+.bingo-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: rgba(15, 23, 42, 0.12) 0 12px 30px;
+}
+
+.bingo-cell--completed {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(59, 130, 246, 0.9));
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.bingo-cell--active {
+  border-color: rgba(99, 102, 241, 0.6);
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag {
+  background: rgba(79, 70, 229, 0.1);
+  color: #312e81;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.section-title {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  justify-content: space-between;
+  margin: 0 0 12px;
 }
 
-.App-link {
-  color: #61dafb;
+.list-reset {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.list-item {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.form-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.form-grid input,
+.form-grid textarea,
+.form-grid select {
+  font: inherit;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: #ffffff;
+}
+
+.primary-button {
+  align-self: flex-start;
+  background: linear-gradient(135deg, #6366f1, #2563eb);
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 24px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.secondary-button {
+  background: transparent;
+  border: 1px solid rgba(37, 99, 235, 0.4);
+  color: #2563eb;
+  border-radius: 999px;
+  padding: 8px 20px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.activity-timestamp {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 36px 16px;
+  border: 2px dashed rgba(148, 163, 184, 0.3);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.5);
 }

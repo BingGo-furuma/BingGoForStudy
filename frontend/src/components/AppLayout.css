@@ -1,0 +1,18 @@
+.app-layout {
+  min-height: 100vh;
+  background: #f5f7fb;
+  display: flex;
+  flex-direction: column;
+  color: #1f2933;
+}
+
+.app-content {
+  flex: 1;
+  padding-bottom: 72px;
+}
+
+@media (min-width: 768px) {
+  .app-content {
+    padding-bottom: 0;
+  }
+}
