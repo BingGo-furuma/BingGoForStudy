@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { mockApi } from '../utils/mockApi';
+import { api } from '../utils/api';
 import { useAppContext } from '../context/AppContext';
 import './Login.css';
 
@@ -11,7 +11,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { resetForEmail } = useAppContext();
+  const { loadInitialData } = useAppContext();
 
   const isRegister = mode === 'register';
   const title = useMemo(() => (isRegister ? 'BingGo アカウントを作成' : 'ログインして学習を始める'), [isRegister]);
@@ -27,15 +27,12 @@ const Login = () => {
     setMessage('');
     try {
       if (isRegister) {
-        await mockApi.register({ email: form.email, password: form.password, name: form.name });
+        await api.register({ email: form.email, password: form.password, name: form.name });
         setMessage('アカウントを作成しました。登録したメールアドレスでログインしてください。');
         setMode('login');
       } else {
-        const response = await mockApi.login(form.email, form.password);
-        const { access, refresh } = response;
-        localStorage.setItem('access_token', access);
-        localStorage.setItem('refresh_token', refresh);
-        resetForEmail(form.email);
+        await api.login(form.email, form.password);
+        await loadInitialData();
         const redirectPath = location.state?.from?.pathname || '/home';
         navigate(redirectPath, { replace: true });
       }

@@ -1,44 +1,73 @@
+from __future__ import annotations
+
+from django.utils import timezone
 from rest_framework import serializers
-from .models import CustomUser
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from .models import CustomUser
+
+
 class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=6)
+
     class Meta:
         model = CustomUser
-        fields = ['id', 'email', 'name', 'password']
-        extra_kwargs = {'password': {'write_only': True}}
-
+        fields = [
+            "id",
+            "email",
+            "password",
+            "name",
+            "grade",
+            "avatar_color",
+            "goal_schools",
+            "payment_method",
+            "subscription_plan",
+            "subscription_status",
+            "subscription_renewal",
+            "study_schedule",
+            "preferred_subjects",
+            "guardian_contact",
+            "notes",
+            "points",
+        ]
+        read_only_fields = ("points",)
 
     def create(self, validated_data):
-        try:
-            user = CustomUser.objects.create(
-                email=validated_data['email'],
-                name=validated_data['name'],
-            )
-            user.set_password(validated_data['password'])
-            user.save()
-            return user
-        except Exception as e:
-            raise serializers.ValidationError(f"Error creating user: {str(e)}")
+        password = validated_data.pop("password")
+        user = CustomUser(**validated_data)
+        user.set_password(password)
+        if not user.subscription_status:
+            user.subscription_status = "trial"
+        if not user.subscription_plan:
+            user.subscription_plan = "BingGo フリープラン"
+        if not user.subscription_renewal:
+            user.subscription_renewal = timezone.now().date()
+        user.save()
+        return user
 
-    
+    def update(self, instance, validated_data):
+        password = validated_data.pop("password", None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if password:
+            instance.set_password(password)
+        instance.save()
+        return instance
+
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-        token['email'] = user.email  # カスタムクレーム
+        token["email"] = user.email
+        token["name"] = user.name
         return token
 
     def validate(self, attrs):
-        # Django の認証が内部で 'username' を使用するため 'email' をマッピング
         credentials = {
-            'username': attrs.get('email', ''),
-            'password': attrs.get('password',''),
+            "username": attrs.get("email", ""),
+            "password": attrs.get("password", ""),
         }
-
-        # バリデーションチェック
-        if not credentials['username'] or not credentials['password']:
+        if not credentials["username"] or not credentials["password"]:
             raise serializers.ValidationError("Both email and password are required.")
-
-        # 親クラスのバリデーションを呼び出す
         return super().validate(credentials)

@@ -76,7 +76,7 @@ const ChallengeModal = ({ task, onClose, onSubmit }) => {
                 ))}
                 {result && (
                   <p className="challenge-modal__explanation">
-                    {question.explanation}
+                    {result.explanation || question.explanation}
                   </p>
                 )}
               </fieldset>
@@ -99,6 +99,10 @@ const ChallengeModal = ({ task, onClose, onSubmit }) => {
             <p>
               正答率: <strong>{formatPercentage(result.score)}</strong> ／ 合否:{' '}
               <strong>{result.passed ? '合格' : '未達'}</strong>
+            </p>
+            <p>
+              正解数: <strong>{result.correct}</strong> / {result.total} ／ 獲得ポイント:{' '}
+              <strong>{result.awardedPoints}</strong>
             </p>
             <p className="challenge-modal__feedback">{result.feedback}</p>
           </footer>

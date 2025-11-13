@@ -63,21 +63,13 @@ const BingoBoardPage = () => {
     setActiveTask(task);
   };
 
-  const handleModalSubmit = (task, responses) => {
-    const correctCount = task.questions.filter((question) => responses[question.id] === question.correctOptionId).length;
-    const score = task.questions.length > 0 ? correctCount / task.questions.length : 0;
-    const passed = score >= task.passThreshold;
-    completeChallenge({ cardId: card.id, taskId: task.id, score, passed });
-    const feedback = passed
-      ? '素晴らしいです！この調子で次のマスにも挑戦しましょう。'
-      : 'あと少しで合格です。解説を参考に復習してみましょう。';
-    return {
-      score,
-      passed,
-      correct: correctCount,
-      total: task.questions.length,
-      feedback
-    };
+  const handleModalSubmit = async (task, responses) => {
+    const evaluation = await completeChallenge({
+      cardId: card.id,
+      taskId: task.id,
+      responses,
+    });
+    return evaluation;
   };
 
   const closeModal = () => setActiveTask(null);
@@ -171,15 +163,23 @@ const BingoBoardPage = () => {
               </p>
               <div>
                 <h4 style={{ marginBottom: 8 }}>推奨リソース</h4>
-                <ul className="list-reset">
-                  {selectedTask.resources.map((resource) => (
-                    <li key={resource} className="list-item" style={{ padding: '8px 12px' }}>
-                      <a href={resource} target="_blank" rel="noreferrer">
-                        {resource}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
+                {selectedTask.resources.length > 0 ? (
+                  <ul className="list-reset">
+                    {selectedTask.resources.map((resource) => (
+                      <li key={resource.id} className="list-item" style={{ padding: '8px 12px' }}>
+                        {resource.url ? (
+                          <a href={resource.url} target="_blank" rel="noreferrer">
+                            {resource.label}
+                          </a>
+                        ) : (
+                          <span>{resource.label}</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p style={{ margin: 0, color: '#94a3b8' }}>おすすめタグは現在ありません。</p>
+                )}
               </div>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 <button className="primary-button" type="button" onClick={() => handleChallenge(selectedTask)}>
