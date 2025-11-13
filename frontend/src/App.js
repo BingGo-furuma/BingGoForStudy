@@ -6,6 +6,8 @@ import BingoPage from './pages/BingoPage';
 import BingoBoardPage from './pages/BingoBoardPage';
 import Search from './pages/Search';
 import Home from './pages/Home';
+import Insights from './pages/Insights';
+import Planner from './pages/Planner';
 import AppLayout from './components/AppLayout';
 import RequireAuth from './components/RequireAuth';
 import { AppProvider } from './context/AppContext';
@@ -25,6 +27,8 @@ function App() {
             <Route element={<RequireAuth />}>
               <Route element={<AppLayout />}>
                 <Route path="/home" element={<Home />} />
+                <Route path="/insights" element={<Insights />} />
+                <Route path="/planner" element={<Planner />} />
                 <Route path="/bingo" element={<BingoPage />} />
                 <Route path="/bingo/:cardId" element={<BingoBoardPage />} />
                 <Route path="/search" element={<Search />} />
