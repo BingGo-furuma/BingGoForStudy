@@ -1,0 +1,57 @@
+.binggo-bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-around;
+  background: rgba(15, 23, 42, 0.92);
+  color: #f8fafc;
+  padding: 10px 0;
+  z-index: 80;
+  backdrop-filter: blur(12px);
+}
+
+.binggo-bottom-nav__item {
+  flex: 1;
+  text-align: center;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  align-items: center;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.binggo-bottom-nav__item--active {
+  color: #facc15;
+}
+
+.binggo-bottom-nav__icon {
+  font-size: 1.2rem;
+}
+
+@media (min-width: 768px) {
+  .binggo-bottom-nav {
+    position: sticky;
+    top: 0;
+    bottom: unset;
+    padding: 12px 32px;
+    justify-content: flex-start;
+    gap: 20px;
+  }
+
+  .binggo-bottom-nav__item {
+    flex: initial;
+    flex-direction: row;
+    gap: 8px;
+    font-size: 0.95rem;
+  }
+
+  .binggo-bottom-nav__icon {
+    font-size: 1.05rem;
+  }
+}

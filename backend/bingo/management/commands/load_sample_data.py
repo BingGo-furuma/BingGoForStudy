@@ -1,15 +1,22 @@
 from __future__ import annotations
 
+import calendar
+from datetime import date, timedelta
 from itertools import islice
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from ...data.challenge_bank import build_japanese_questions, build_math_questions
+from ...data.challenge_bank import (
+    build_binggo_lifestyle_challenges,
+    build_japanese_questions,
+    build_math_questions,
+)
 from ...models import (
     Achievement,
     BingoCard,
     BingoTile,
+    CardProgramType,
     ChallengeQuestion,
     CoachingTip,
     DifficultyChoices,
@@ -63,6 +70,22 @@ ACHIEVEMENTS = [
     {"code": "japanese-ace", "title": "国語エース", "description": "国語カードで15マスをクリアした", "points": 200, "subject": SubjectChoices.JAPANESE},
     {"code": "bingo-hunter", "title": "ビンゴハンター", "description": "累計25マスをクリアした", "points": 250},
     {"code": "line-clear", "title": "ラインコンプリート", "description": "ビンゴラインを1列完成させた", "points": 150},
+    {
+        "code": "binggo-rookie",
+        "title": "Bing Go ルーキー",
+        "description": "Bing Go 月間チャレンジで5マス達成",
+        "points": 150,
+        "subject": SubjectChoices.SOCIAL,
+        "icon": "🌟",
+    },
+    {
+        "code": "binggo-champion",
+        "title": "Bing Go チャンピオン",
+        "description": "Bing Go 月間チャレンジで全ライン達成",
+        "points": 400,
+        "subject": SubjectChoices.SOCIAL,
+        "icon": "🏆",
+    },
 ]
 
 RESOURCES = [
@@ -131,9 +154,16 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         math_payloads = build_math_questions()
         japanese_payloads = build_japanese_questions()
-        self.stdout.write(self.style.NOTICE(f"数学問題: {len(math_payloads)}件、国語問題: {len(japanese_payloads)}件を登録します。"))
+        lifestyle_payloads = build_binggo_lifestyle_challenges()
+        self.stdout.write(
+            self.style.NOTICE(
+                "数学問題: {math}件、国語問題: {japanese}件、ライフスタイル: {life}件を登録します。".format(
+                    math=len(math_payloads), japanese=len(japanese_payloads), life=len(lifestyle_payloads)
+                )
+            )
+        )
 
-        for payload in math_payloads + japanese_payloads:
+        for payload in math_payloads + japanese_payloads + lifestyle_payloads:
             ChallengeQuestion.objects.update_or_create(
                 subject=payload["subject"],
                 prompt=payload["prompt"],
@@ -152,6 +182,9 @@ class Command(BaseCommand):
 
         math_questions = list(ChallengeQuestion.objects.filter(subject=SubjectChoices.MATH).order_by("id"))
         japanese_questions = list(ChallengeQuestion.objects.filter(subject=SubjectChoices.JAPANESE).order_by("id"))
+        lifestyle_questions = list(
+            ChallengeQuestion.objects.filter(source="binggo:lifestyle").order_by("id")
+        )
 
         question_iterators = {
             SubjectChoices.MATH: iter(math_questions),
@@ -222,5 +255,49 @@ class Command(BaseCommand):
                     "content": tip["content"],
                 },
             )
+
+        today = date.today()
+        current_month_start = today.replace(day=1)
+        next_month = (current_month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
+        month_periods = [current_month_start, next_month]
+
+        for order, month_start in enumerate(month_periods):
+            _, last_day = calendar.monthrange(month_start.year, month_start.month)
+            month_end = month_start.replace(day=last_day)
+            slug = f"binggo-{month_start.strftime('%Y-%m')}"
+            month_label = f"Bing Go {month_start.month}月"
+            card, _ = BingoCard.objects.update_or_create(
+                slug=slug,
+                defaults={
+                    "title": f"{month_label}チャレンジ",
+                    "summary": "毎月49個の季節チャレンジに挑戦し、ライフログを充実させる月間ビンゴです。",
+                    "subject_focus": SubjectChoices.SOCIAL,
+                    "difficulty": DifficultyChoices.STANDARD,
+                    "grade_level": "ライフスタイル",
+                    "size": 7,
+                    "reward_multiplier": 18,
+                    "tags": ["季節チャレンジ", "ライフスタイル"],
+                    "program_type": CardProgramType.BINGGO,
+                    "period_start": month_start,
+                    "period_end": month_end,
+                    "monthly_label": month_label,
+                },
+            )
+
+            rotated = lifestyle_questions[order:] + lifestyle_questions[:order]
+            for index, question in enumerate(rotated[: card.size * card.size], start=1):
+                row = (index - 1) // card.size
+                column = (index - 1) % card.size
+                BingoTile.objects.update_or_create(
+                    card=card,
+                    position=index,
+                    defaults={
+                        "row": row,
+                        "column": column,
+                        "challenge": question,
+                        "reward_points": 25 + (index % 7) * 3,
+                        "recommended_minutes": 20,
+                    },
+                )
 
         self.stdout.write(self.style.SUCCESS("サンプルデータの投入が完了しました。"))

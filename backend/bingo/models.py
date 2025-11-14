@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import time
+from datetime import date, time
 
 from django.conf import settings
 from django.db import models
@@ -44,6 +44,11 @@ class ChallengeQuestion(models.Model):
         return f"{self.get_subject_display()} / {self.prompt[:24]}"
 
 
+class CardProgramType(models.TextChoices):
+    FOR_STUDY = "study", "BingGo for Study"
+    BINGGO = "binggo", "Bing Go"
+
+
 class BingoCard(models.Model):
     title = models.CharField(max_length=120)
     slug = models.SlugField(unique=True)
@@ -54,6 +59,14 @@ class BingoCard(models.Model):
     size = models.PositiveSmallIntegerField(default=5)
     reward_multiplier = models.PositiveSmallIntegerField(default=10)
     tags = models.JSONField(default=list, blank=True)
+    program_type = models.CharField(
+        max_length=32,
+        choices=CardProgramType.choices,
+        default=CardProgramType.FOR_STUDY,
+    )
+    period_start = models.DateField(null=True, blank=True)
+    period_end = models.DateField(null=True, blank=True)
+    monthly_label = models.CharField(max_length=64, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -63,6 +76,15 @@ class BingoCard(models.Model):
 
     def __str__(self) -> str:
         return self.title
+
+    @property
+    def is_active(self) -> bool:
+        today = date.today()
+        if self.period_start and today < self.period_start:
+            return False
+        if self.period_end and today > self.period_end:
+            return False
+        return True
 
 
 class BingoTile(models.Model):

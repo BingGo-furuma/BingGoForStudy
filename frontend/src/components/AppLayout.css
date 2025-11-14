@@ -6,6 +6,10 @@
   color: #1f2933;
 }
 
+.app-layout--binggo {
+  background: linear-gradient(180deg, #fff7ed 0%, #fff 35%, #f8fafc 100%);
+}
+
 .app-content {
   flex: 1;
   padding-bottom: 72px;

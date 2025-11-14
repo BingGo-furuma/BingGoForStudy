@@ -29,8 +29,9 @@ class UserSerializer(serializers.ModelSerializer):
             "guardian_contact",
             "notes",
             "points",
+            "binggo_points",
         ]
-        read_only_fields = ("points",)
+        read_only_fields = ("points", "binggo_points")
 
     def create(self, validated_data):
         password = validated_data.pop("password")

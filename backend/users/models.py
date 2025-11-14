@@ -20,6 +20,7 @@ class CustomUser(AbstractUser):
     guardian_contact = models.CharField(max_length=128, blank=True)
     notes = models.TextField(blank=True)
     points = models.PositiveIntegerField(default=0)
+    binggo_points = models.PositiveIntegerField(default=0)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["name"]

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { useAppContext } from '../context/AppContext';
+import { ProgramTypes, useAppContext } from '../context/AppContext';
 import './HeaderBar.css';
 
 const navItems = [
@@ -10,7 +10,7 @@ const navItems = [
 ];
 
 const HeaderBar = () => {
-  const { profile, points, notifications } = useAppContext();
+  const { profile, points, notifications, selectExperience } = useAppContext();
   const unreadCount = notifications.filter((notification) => !notification.isRead).length;
   const avatarInitial = profile.name ? profile.name[0] : '学';
 
@@ -44,6 +44,13 @@ const HeaderBar = () => {
           <Link to="/bingo" className="header-bar__cta">
             ビンゴを開く
           </Link>
+          <button
+            type="button"
+            className="header-bar__secondary"
+            onClick={() => selectExperience(ProgramTypes.BINGGO, { preload: true })}
+          >
+            Bing Goへ
+          </button>
           <Link to="/home#notifications" className="header-bar__icon-button" aria-label="通知">
             <span aria-hidden="true">🔔</span>
             {unreadCount > 0 && <span className="header-bar__badge">{unreadCount}</span>}

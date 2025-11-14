@@ -36,6 +36,12 @@ def calculate_score(challenge: ChallengeQuestion, selected_choices: Iterable[str
     selected = set(selected_choices)
     correct = set(challenge.correct_choices)
 
+    if challenge.question_type in {"activity", "confirmation"}:
+        ratio = 1.0 if selected else 0.0
+        score = Decimal(str(round(ratio * 100, 2)))
+        is_passed = bool(selected) or not correct
+        return ScoreResult(score=score, ratio=ratio, is_passed=is_passed)
+
     if not correct:
         return ScoreResult(score=Decimal("0"), ratio=0.0, is_passed=False)
 

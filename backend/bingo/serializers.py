@@ -89,6 +89,7 @@ class BingoCardSummarySerializer(serializers.ModelSerializer):
     completed_tiles = serializers.SerializerMethodField()
     points_earned = serializers.SerializerMethodField()
     completed_lines = serializers.SerializerMethodField()
+    is_active = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = BingoCard
@@ -102,6 +103,11 @@ class BingoCardSummarySerializer(serializers.ModelSerializer):
             "grade_level",
             "size",
             "tags",
+            "program_type",
+            "period_start",
+            "period_end",
+            "monthly_label",
+            "is_active",
             "created_at",
             "updated_at",
             "total_tiles",
@@ -193,10 +199,34 @@ class LearningResourceSerializer(serializers.ModelSerializer):
 
 class ChallengeAttemptSerializer(serializers.ModelSerializer):
     challenge = ChallengeQuestionSerializer(read_only=True)
+    tile_id = serializers.IntegerField(source="tile_id", read_only=True)
+    card_slug = serializers.SerializerMethodField()
+    card_title = serializers.SerializerMethodField()
+    card_program_type = serializers.SerializerMethodField()
 
     class Meta:
         model = ChallengeAttempt
-        fields = ("id", "challenge", "submitted_choices", "score", "is_passed", "created_at")
+        fields = (
+            "id",
+            "challenge",
+            "submitted_choices",
+            "score",
+            "is_passed",
+            "created_at",
+            "tile_id",
+            "card_slug",
+            "card_title",
+            "card_program_type",
+        )
+
+    def get_card_slug(self, obj):
+        return obj.tile.card.slug
+
+    def get_card_title(self, obj):
+        return obj.tile.card.title
+
+    def get_card_program_type(self, obj):
+        return obj.tile.card.program_type
 
 
 class AchievementSerializer(serializers.ModelSerializer):

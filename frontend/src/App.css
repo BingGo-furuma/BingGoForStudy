@@ -88,7 +88,8 @@ button {
 
 .bingo-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  --bingo-size: 5;
+  grid-template-columns: repeat(var(--bingo-size), minmax(0, 1fr));
   gap: 8px;
 }
 

@@ -12,6 +12,7 @@ from .models import (
     Achievement,
     BingoCard,
     BingoTile,
+    CardProgramType,
     ChallengeAttempt,
     CoachingTip,
     LearningResource,
@@ -50,11 +51,15 @@ class BingoCardViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         tiles = BingoTile.objects.select_related("challenge").order_by("position")
-        return (
+        queryset = (
             BingoCard.objects.all()
             .prefetch_related(Prefetch("tiles", queryset=tiles))
             .order_by("title")
         )
+        program = self.request.query_params.get("program")
+        if program in CardProgramType.values:
+            queryset = queryset.filter(program_type=program)
+        return queryset
 
     def get_serializer_class(self):
         if self.action == "retrieve":
@@ -96,11 +101,18 @@ class BingoCardViewSet(viewsets.ReadOnlyModelViewSet):
 
         points_awarded = tile.reward_points if score_result.is_passed else 0
         if points_awarded:
-            request.user.points = request.user.points + points_awarded
-            request.user.save(update_fields=["points"])
+            if card.program_type == CardProgramType.BINGGO:
+                request.user.binggo_points = request.user.binggo_points + points_awarded
+                update_fields = ["binggo_points"]
+                notice_title = "Bing Go チャレンジ達成！"
+            else:
+                request.user.points = request.user.points + points_awarded
+                update_fields = ["points"]
+                notice_title = "マスをクリアしました！"
+            request.user.save(update_fields=update_fields)
             queue_notification(
                 request.user,
-                title="マスをクリアしました！",
+                title=notice_title,
                 message=f"{card.title} のマス {tile.position} を達成し、{points_awarded} ポイントを獲得しました。",
             )
 

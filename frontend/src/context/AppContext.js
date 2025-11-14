@@ -3,6 +3,11 @@ import { api } from '../utils/api';
 
 const AppContext = createContext();
 
+export const ProgramTypes = {
+  STUDY: 'study',
+  BINGGO: 'binggo',
+};
+
 const toCamelProfile = (data) => ({
   id: data.id,
   email: data.email,
@@ -21,6 +26,7 @@ const toCamelProfile = (data) => ({
   guardianContact: data.guardian_contact || '',
   notes: data.notes || '',
   points: data.points || 0,
+  binggoPoints: data.binggo_points || 0,
 });
 
 const adaptTileToTask = (tile) => ({
@@ -30,7 +36,12 @@ const adaptTileToTask = (tile) => ({
   title: tile.challenge.prompt.slice(0, 30),
   category: tile.challenge.subject,
   difficulty: tile.challenge.difficulty,
-  description: tile.challenge.tags.join('／') || tile.challenge.prompt,
+  description:
+    tile.challenge.question_type === 'activity'
+      ? tile.challenge.prompt
+      : tile.challenge.tags.join('／') || tile.challenge.prompt,
+  prompt: tile.challenge.prompt,
+  questionType: tile.challenge.question_type,
   passThreshold: Number(tile.challenge.pass_threshold),
   questions: [
     {
@@ -68,6 +79,11 @@ const adaptCardDetail = (card) => ({
   totalTiles: card.total_tiles,
   completedTiles: card.completed_tiles,
   pointsEarned: card.points_earned,
+  programType: card.program_type,
+  periodStart: card.period_start,
+  periodEnd: card.period_end,
+  monthlyLabel: card.monthly_label,
+  isActive: card.is_active,
   tasks: card.tiles.map(adaptTileToTask),
 });
 
@@ -203,6 +219,18 @@ const defaultProfileState = {
   guardianContact: '',
   notes: '',
   points: 0,
+  binggoPoints: 0,
+};
+
+const initialBinggoMetrics = {
+  activeCardId: null,
+  completed: 0,
+  total: 0,
+  progress: 0,
+  nextDeadline: null,
+  monthlyLabel: '',
+  daysRemaining: null,
+  points: 0,
 };
 
 export const AppProvider = ({ children }) => {
@@ -219,83 +247,147 @@ export const AppProvider = ({ children }) => {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [experience, setExperience] = useState(() => {
+    if (typeof window === 'undefined') {
+      return ProgramTypes.STUDY;
+    }
+    return localStorage.getItem('binggo:experience') || ProgramTypes.STUDY;
+  });
+  const [binggoCards, setBinggoCards] = useState([]);
+  const [binggoMetrics, setBinggoMetrics] = useState(initialBinggoMetrics);
+  const [binggoActivity, setBinggoActivity] = useState([]);
+  const [binggoUpcoming, setBinggoUpcoming] = useState([]);
 
-  const fetchCardsWithDetails = useCallback(async () => {
-    const summaries = await api.getCards();
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('binggo:experience', experience);
+    }
+  }, [experience]);
+
+  const fetchCardsWithDetails = useCallback(async (program) => {
+    const summaries = await api.getCards(program ? { program } : undefined);
     const details = await Promise.all(summaries.map((card) => api.getCard(card.slug)));
     return details.map(adaptCardDetail);
   }, []);
 
-  const loadInitialData = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const [profileData, detailedCards, planData, notificationData, resourceData, achievementData, attemptData, insightData, tipsData] =
-        await Promise.all([
-          api.getProfile(),
-          fetchCardsWithDetails(),
-          api.getStudyPlan(),
-          api.getNotifications(),
-          api.getResources(),
-          api.getAchievements(),
-          api.getAttempts(),
-          api.getInsights(),
-          api.getCoachingTips(),
+  const loadStudyDomain = useCallback(async () => {
+    const [cardsPayload, planData, notificationData, resourceData, achievementData, attemptData, insightData, tipsData] =
+      await Promise.all([
+        fetchCardsWithDetails(ProgramTypes.STUDY),
+        api.getStudyPlan(),
+        api.getNotifications(),
+        api.getResources(),
+        api.getAchievements(),
+        api.getAttempts(),
+        api.getInsights(),
+        api.getCoachingTips(),
+      ]);
+
+    const notificationsPayload = adaptNotifications(notificationData);
+    const attemptsPayload = attemptData.map((item) => {
+      const { card_slug: cardSlug, card_title: cardTitle, card_program_type: cardProgramType, ...rest } = item;
+      return {
+        ...rest,
+        cardSlug,
+        cardTitle,
+        cardProgramType,
+        score: Number(item.score),
+      };
+    });
+
+    setCards(cardsPayload);
+    setStudyPlan(adaptStudyPlan(planData));
+    setNotifications(notificationsPayload);
+    setResources(adaptResources(resourceData));
+    setAchievements(achievementData);
+    setAttempts(attemptsPayload);
+    setCoachingTips(adaptCoachingTips(tipsData));
+    setInsights(adaptInsights(insightData));
+
+    return { cardsPayload, attemptsPayload, notificationsPayload };
+  }, [fetchCardsWithDetails]);
+
+  const loadBinggoDomain = useCallback(async () => {
+    const cardsPayload = await fetchCardsWithDetails(ProgramTypes.BINGGO);
+    setBinggoCards(cardsPayload);
+    return cardsPayload;
+  }, [fetchCardsWithDetails]);
+
+  const loadInitialData = useCallback(
+    async (program = experience) => {
+      setLoading(true);
+      setError('');
+      try {
+        const profileData = await api.getProfile();
+        const profilePayload = toCamelProfile(profileData);
+        setProfile(profilePayload);
+
+        const [studyResult, binggoResult] = await Promise.all([
+          loadStudyDomain(),
+          loadBinggoDomain(),
         ]);
 
-      const profilePayload = toCamelProfile(profileData);
-      const notificationsPayload = adaptNotifications(notificationData);
-      const attemptsPayload = attemptData.map((item) => ({
-        ...item,
-        score: Number(item.score),
-      }));
-      const cardsPayload = detailedCards;
+        const studyAttempts = studyResult.attemptsPayload.filter(
+          (attempt) => attempt.cardProgramType !== ProgramTypes.BINGGO
+        );
+        setPoints(buildPoints(profilePayload, studyResult.cardsPayload, studyAttempts));
+        setActivities(buildActivities(studyAttempts, studyResult.notificationsPayload));
 
-      setProfile(profilePayload);
-      setCards(cardsPayload);
-      setStudyPlan(adaptStudyPlan(planData));
-      setNotifications(notificationsPayload);
-      setResources(adaptResources(resourceData));
-      setAchievements(achievementData);
-      setAttempts(attemptsPayload);
-      setCoachingTips(adaptCoachingTips(tipsData));
-      setInsights(adaptInsights(insightData));
-      setPoints(buildPoints(profilePayload, cardsPayload, attemptsPayload));
-      setActivities(buildActivities(attemptsPayload, notificationsPayload));
-    } catch (err) {
-      console.error(err);
-      setError(err.message || 'データの取得に失敗しました。');
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchCardsWithDetails]);
+        if (program === ProgramTypes.BINGGO && binggoResult.length === 0) {
+          setBinggoCards(binggoResult);
+        }
+      } catch (err) {
+        console.error(err);
+        setError(err.message || 'データの取得に失敗しました。');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [experience, loadStudyDomain, loadBinggoDomain]
+  );
 
   const refreshCard = useCallback(
     async (cardIdentifier) => {
-      const target = cards.find(
+      const targetStudy = cards.find(
         (card) => card.id === cardIdentifier || String(card.backendId) === String(cardIdentifier)
       );
-      const slug = target?.id || cardIdentifier;
+      const targetBinggo = binggoCards.find(
+        (card) => card.id === cardIdentifier || String(card.backendId) === String(cardIdentifier)
+      );
+      const slug = targetStudy?.id || targetBinggo?.id || cardIdentifier;
       const detail = await api.getCard(slug);
       const adapted = adaptCardDetail(detail);
-      setCards((prev) => {
-        const exists = prev.some((card) => card.id === adapted.id);
-        if (exists) {
-          return prev.map((card) => (card.id === adapted.id ? adapted : card));
-        }
-        return [...prev, adapted];
-      });
+      if (adapted.programType === ProgramTypes.BINGGO) {
+        setBinggoCards((prev) => {
+          const exists = prev.some((card) => card.id === adapted.id);
+          if (exists) {
+            return prev.map((card) => (card.id === adapted.id ? adapted : card));
+          }
+          return [...prev, adapted];
+        });
+      } else {
+        setCards((prev) => {
+          const exists = prev.some((card) => card.id === adapted.id);
+          if (exists) {
+            return prev.map((card) => (card.id === adapted.id ? adapted : card));
+          }
+          return [...prev, adapted];
+        });
+      }
       return adapted;
     },
-    [cards]
+    [cards, binggoCards]
   );
 
   const completeChallenge = useCallback(
     async ({ cardId, taskId, responses }) => {
-      const target = cards.find(
+      const targetStudy = cards.find(
         (card) => card.id === cardId || String(card.backendId) === String(cardId)
       );
-      const slug = target?.id || cardId;
+      const targetBinggo = binggoCards.find(
+        (card) => card.id === cardId || String(card.backendId) === String(cardId)
+      );
+      const slug = targetStudy?.id || targetBinggo?.id || cardId;
       const choiceList = (Array.isArray(responses) ? responses : Object.values(responses || {})).filter(Boolean);
       const payload = await api.submitTile(slug, taskId, choiceList);
       const adaptedCard = await refreshCard(slug);
@@ -317,13 +409,37 @@ export const AppProvider = ({ children }) => {
 
       const profilePayload = toCamelProfile(profileData);
       const notificationsPayload = adaptNotifications(notificationData);
-      const attemptsPayload = attemptData.map((item) => ({ ...item, score: Number(item.score) }));
-      const nextCards = (() => {
+      const attemptsPayload = attemptData.map((item) => {
+        const { card_slug: cardSlug, card_title: cardTitle, card_program_type: cardProgramType, ...rest } = item;
+        return {
+          ...rest,
+          cardSlug,
+          cardTitle,
+          cardProgramType,
+          score: Number(item.score),
+        };
+      });
+      const updatedStudyCards = (() => {
+        if (adaptedCard.programType === ProgramTypes.BINGGO) {
+          return cards;
+        }
         const replaced = cards.map((card) => (card.id === adaptedCard.id ? adaptedCard : card));
         return replaced.some((card) => card.id === adaptedCard.id)
           ? replaced
           : [...cards, adaptedCard];
       })();
+      const updatedBinggoCards = (() => {
+        if (adaptedCard.programType !== ProgramTypes.BINGGO) {
+          return binggoCards;
+        }
+        const replaced = binggoCards.map((card) => (card.id === adaptedCard.id ? adaptedCard : card));
+        return replaced.some((card) => card.id === adaptedCard.id)
+          ? replaced
+          : [...binggoCards, adaptedCard];
+      })();
+      const studyAttempts = attemptsPayload.filter(
+        (attempt) => attempt.cardProgramType !== ProgramTypes.BINGGO
+      );
 
       setProfile(profilePayload);
       setAttempts(attemptsPayload);
@@ -331,8 +447,13 @@ export const AppProvider = ({ children }) => {
       setNotifications(notificationsPayload);
       setInsights(adaptInsights(insightData));
       setStudyPlan(adaptStudyPlan(planData));
-      setPoints(buildPoints(profilePayload, nextCards, attemptsPayload));
-      setActivities(buildActivities(attemptsPayload, notificationsPayload));
+      if (adaptedCard.programType === ProgramTypes.BINGGO) {
+        setBinggoCards(updatedBinggoCards);
+      } else {
+        setCards(updatedStudyCards);
+      }
+      setPoints(buildPoints(profilePayload, updatedStudyCards, studyAttempts));
+      setActivities(buildActivities(studyAttempts, notificationsPayload));
 
       const correctChoices = payload.result.correct_choices || [];
       const correctCount = correctChoices.filter((choice) => choiceList.includes(choice)).length;
@@ -349,8 +470,62 @@ export const AppProvider = ({ children }) => {
         awardedPoints: payload.result.awarded_points,
       };
     },
-    [cards, refreshCard]
+    [binggoCards, cards, refreshCard]
   );
+
+  useEffect(() => {
+    if (!profile.id || binggoCards.length === 0) {
+      setBinggoMetrics(initialBinggoMetrics);
+      setBinggoActivity([]);
+      setBinggoUpcoming([]);
+      return;
+    }
+    const activeCard = binggoCards.find((card) => card.isActive) || binggoCards[0];
+    if (!activeCard) {
+      setBinggoMetrics(initialBinggoMetrics);
+      setBinggoActivity([]);
+      setBinggoUpcoming([]);
+      return;
+    }
+    const completed = activeCard.tasks.filter((task) => task.isCompleted).length;
+    const total = activeCard.tasks.length;
+    const progress = total ? completed / total : 0;
+    const nextDeadline = activeCard.periodEnd;
+    const monthlyLabel = activeCard.monthlyLabel || activeCard.title;
+    const daysRemaining = nextDeadline
+      ? Math.max(0, Math.ceil((new Date(nextDeadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+      : null;
+    setBinggoMetrics({
+      activeCardId: activeCard.id,
+      completed,
+      total,
+      progress,
+      nextDeadline,
+      monthlyLabel,
+      daysRemaining,
+      points: profile.binggoPoints,
+    });
+
+    const relevantAttempts = attempts
+      .filter(
+        (attempt) =>
+          attempt.cardProgramType === ProgramTypes.BINGGO &&
+          (attempt.cardSlug === activeCard.id || attempt.cardTitle === activeCard.title)
+      )
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 8)
+      .map((attempt) => ({
+        id: attempt.id,
+        title: attempt.challenge?.prompt?.slice(0, 40) || attempt.cardTitle,
+        score: attempt.score,
+        isPassed: attempt.is_passed,
+        createdAt: attempt.created_at,
+      }));
+    setBinggoActivity(relevantAttempts);
+
+    const upcoming = activeCard.tasks.filter((task) => !task.isCompleted).slice(0, 6);
+    setBinggoUpcoming(upcoming);
+  }, [profile, binggoCards, attempts]);
 
   const markNotificationRead = useCallback(async (notificationId) => {
     await api.markNotificationRead(notificationId);
@@ -436,6 +611,16 @@ export const AppProvider = ({ children }) => {
     return profilePayload;
   }, []);
 
+  const selectExperience = useCallback(
+    (nextExperience, { preload = false } = {}) => {
+      setExperience(nextExperience);
+      if (preload) {
+        loadInitialData(nextExperience);
+      }
+    },
+    [loadInitialData]
+  );
+
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
     if (token) {
@@ -447,6 +632,12 @@ export const AppProvider = ({ children }) => {
     () => ({
       profile,
       cards,
+      experience,
+      selectExperience,
+      binggoCards,
+      binggoMetrics,
+      binggoActivity,
+      binggoUpcoming,
       studyPlan,
       notifications,
       resources,
@@ -473,6 +664,12 @@ export const AppProvider = ({ children }) => {
     [
       profile,
       cards,
+      experience,
+      selectExperience,
+      binggoCards,
+      binggoMetrics,
+      binggoActivity,
+      binggoUpcoming,
       studyPlan,
       notifications,
       resources,

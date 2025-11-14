@@ -57,6 +57,11 @@ const ChallengeModal = ({ task, onClose, onSubmit }) => {
         </header>
         <div className="challenge-modal__body">
           <p className="challenge-modal__description">{task.description}</p>
+          {task.questionType === 'activity' && (
+            <p className="challenge-modal__hint">
+              チャレンジを完了したら「チャレンジ達成！」を選択して提出してください。
+            </p>
+          )}
           <form onSubmit={handleSubmit} className="challenge-modal__form">
             {task.questions.map((question) => (
               <fieldset key={question.id} className="challenge-modal__question">

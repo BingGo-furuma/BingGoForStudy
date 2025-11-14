@@ -16,6 +16,17 @@ const handleResponse = async (response) => {
   return data;
 };
 
+const buildQuery = (params = {}) => {
+  const entries = Object.entries(params).filter(([, value]) => value !== undefined && value !== null);
+  if (entries.length === 0) {
+    return '';
+  }
+  const query = entries
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    .join('&');
+  return `?${query}`;
+};
+
 const request = async (endpoint, { method = 'GET', data, token } = {}) => {
   const headers = { 'Content-Type': 'application/json' };
   const accessToken = token || getAccessToken();
@@ -82,7 +93,7 @@ export const api = {
   },
   getProfile: () => request('/users/profile/'),
   updateProfile: (payload) => request('/users/profile/', { method: 'PATCH', data: payload }),
-  getCards: () => request('/bingo/cards/'),
+  getCards: (params) => request(`/bingo/cards/${buildQuery(params)}`),
   getCard: (slug) => request(`/bingo/cards/${slug}/`),
   submitTile: (cardSlug, tileId, selectedChoices) =>
     request(`/bingo/cards/${cardSlug}/tiles/${tileId}/submit/`, {

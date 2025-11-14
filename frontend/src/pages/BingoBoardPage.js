@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useAppContext } from '../context/AppContext';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { ProgramTypes, useAppContext } from '../context/AppContext';
 import ChallengeModal from '../components/ChallengeModal';
 
 const formatPercentage = (value) => `${Math.round(value * 100)}%`;
@@ -8,10 +8,13 @@ const formatPercentage = (value) => `${Math.round(value * 100)}%`;
 const BingoBoardPage = () => {
   const { cardId } = useParams();
   const navigate = useNavigate();
-  const { cards, completeChallenge } = useAppContext();
-  const card = cards.find((item) => item.id === cardId);
+  const location = useLocation();
+  const { cards, binggoCards, completeChallenge } = useAppContext();
+  const card = cards.find((item) => item.id === cardId) || binggoCards.find((item) => item.id === cardId);
   const [selectedTask, setSelectedTask] = useState(() => card?.tasks?.[0] || null);
   const [activeTask, setActiveTask] = useState(null);
+  const isBinggo = card?.programType === ProgramTypes.BINGGO;
+  const routeIsBinggo = location.pathname.startsWith('/binggo');
 
   useEffect(() => {
     if (!card) {
@@ -43,7 +46,11 @@ const BingoBoardPage = () => {
         <section className="card">
           <h2>カードが見つかりません</h2>
           <p>URL を確認するか、カード一覧から再度アクセスしてください。</p>
-          <button className="primary-button" type="button" onClick={() => navigate('/bingo')}>
+          <button
+            className="primary-button"
+            type="button"
+            onClick={() => navigate(routeIsBinggo ? '/binggo/home' : '/bingo')}
+          >
             カード一覧へ戻る
           </button>
         </section>
@@ -104,7 +111,12 @@ const BingoBoardPage = () => {
             <h3 style={{ margin: 0 }}>ビンゴボード</h3>
             <span style={{ color: '#2563eb', fontWeight: 600 }}>ビンゴ達成: {card.completedLines.length}</span>
           </div>
-          <div className="bingo-grid" role="grid" aria-label={`${card.title} のビンゴボード`}>
+          <div
+            className="bingo-grid"
+            role="grid"
+            aria-label={`${card.title} のビンゴボード`}
+            style={{ '--bingo-size': card.size }}
+          >
             {card.tasks.map((task) => {
               const classNames = ['bingo-cell'];
               if (task.isCompleted) {
@@ -143,24 +155,39 @@ const BingoBoardPage = () => {
                 </strong>
                 <p style={{ margin: '6px 0', color: '#475569' }}>{selectedTask.description}</p>
               </div>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#1d4ed8' }}>
-                分野: {selectedTask.category} ／ レベル: {selectedTask.difficulty}
-              </p>
-              <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
-                <div className="stat-tile" style={{ padding: 12 }}>
-                  <span>合格ライン</span>
-                  <strong>{formatPercentage(selectedTask.passThreshold)}</strong>
+              {isBinggo ? (
+                <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+                  <div className="stat-tile" style={{ padding: 12 }}>
+                    <span>推奨時間</span>
+                    <strong>{selectedTask.recommendedMinutes || 20} 分</strong>
+                  </div>
+                  <div className="stat-tile" style={{ padding: 12 }}>
+                    <span>獲得ポイント</span>
+                    <strong>{selectedTask.rewardPoints}</strong>
+                  </div>
                 </div>
-                <div className="stat-tile" style={{ padding: 12 }}>
-                  <span>これまでの正答率</span>
-                  <strong>
-                    {selectedTask.lastScore !== null ? formatPercentage(selectedTask.lastScore) : '---'}
-                  </strong>
-                </div>
-              </div>
-              <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>
-                挑戦回数: {selectedTask.attempts}
-              </p>
+              ) : (
+                <>
+                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#1d4ed8' }}>
+                    分野: {selectedTask.category} ／ レベル: {selectedTask.difficulty}
+                  </p>
+                  <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+                    <div className="stat-tile" style={{ padding: 12 }}>
+                      <span>合格ライン</span>
+                      <strong>{formatPercentage(selectedTask.passThreshold)}</strong>
+                    </div>
+                    <div className="stat-tile" style={{ padding: 12 }}>
+                      <span>これまでの正答率</span>
+                      <strong>
+                        {selectedTask.lastScore !== null ? formatPercentage(selectedTask.lastScore) : '---'}
+                      </strong>
+                    </div>
+                  </div>
+                  <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>
+                    挑戦回数: {selectedTask.attempts}
+                  </p>
+                </>
+              )}
               <div>
                 <h4 style={{ marginBottom: 8 }}>推奨リソース</h4>
                 {selectedTask.resources.length > 0 ? (
@@ -178,14 +205,22 @@ const BingoBoardPage = () => {
                     ))}
                   </ul>
                 ) : (
-                  <p style={{ margin: 0, color: '#94a3b8' }}>おすすめタグは現在ありません。</p>
+                  <p style={{ margin: 0, color: '#94a3b8' }}>
+                    {isBinggo
+                      ? '達成した内容や写真をメモして、チームと共有しましょう。'
+                      : 'おすすめタグは現在ありません。'}
+                  </p>
                 )}
               </div>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 <button className="primary-button" type="button" onClick={() => handleChallenge(selectedTask)}>
                   {selectedTask.isCompleted ? '復習する' : 'チャレンジを開始'}
                 </button>
-                <button className="secondary-button" type="button" onClick={() => navigate('/bingo')}>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => navigate(isBinggo ? '/binggo/home' : '/bingo')}
+                >
                   カード一覧へ戻る
                 </button>
               </div>
@@ -198,20 +233,37 @@ const BingoBoardPage = () => {
 
       <section className="card" aria-labelledby="rules-heading">
         <h3 id="rules-heading">カードの遊び方</h3>
-        <ul className="list-reset">
-          <li className="list-item">
-            <strong>1. マスを選択</strong>
-            <p style={{ margin: '6px 0 0' }}>興味のあるマスを選び、設問に回答します。</p>
-          </li>
-          <li className="list-item">
-            <strong>2. 正答率 {formatPercentage(selectedTask?.passThreshold ?? 0.7)} 以上で合格</strong>
-            <p style={{ margin: '6px 0 0' }}>複数の選択問題に回答すると正答率が表示されます。</p>
-          </li>
-          <li className="list-item">
-            <strong>3. ビンゴラインでボーナス獲得</strong>
-            <p style={{ margin: '6px 0 0' }}>縦・横・斜めのラインを揃えるとボーナスポイントが加算されます。</p>
-          </li>
-        </ul>
+        {isBinggo ? (
+          <ul className="list-reset">
+            <li className="list-item">
+              <strong>1. マスを選んでチャレンジ内容を確認</strong>
+              <p style={{ margin: '6px 0 0' }}>写真撮影や記録が必要なタスクは、完了時に保存しておきましょう。</p>
+            </li>
+            <li className="list-item">
+              <strong>2. 達成したら「チャレンジ達成！」を選択</strong>
+              <p style={{ margin: '6px 0 0' }}>証拠メモを残したい場合は、メモ欄や外部SNSにまとめるのもおすすめです。</p>
+            </li>
+            <li className="list-item">
+              <strong>3. ライン完成でボーナスポイント</strong>
+              <p style={{ margin: '6px 0 0' }}>横・縦・斜めを揃えるごとに追加ポイントが付与されます。</p>
+            </li>
+          </ul>
+        ) : (
+          <ul className="list-reset">
+            <li className="list-item">
+              <strong>1. マスを選択</strong>
+              <p style={{ margin: '6px 0 0' }}>興味のあるマスを選び、設問に回答します。</p>
+            </li>
+            <li className="list-item">
+              <strong>2. 正答率 {formatPercentage(selectedTask?.passThreshold ?? 0.7)} 以上で合格</strong>
+              <p style={{ margin: '6px 0 0' }}>複数の選択問題に回答すると正答率が表示されます。</p>
+            </li>
+            <li className="list-item">
+              <strong>3. ビンゴラインでボーナス獲得</strong>
+              <p style={{ margin: '6px 0 0' }}>縦・横・斜めのラインを揃えるとボーナスポイントが加算されます。</p>
+            </li>
+          </ul>
+        )}
       </section>
 
       {activeTask && (

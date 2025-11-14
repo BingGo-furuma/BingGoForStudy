@@ -8,6 +8,8 @@ import Search from './pages/Search';
 import Home from './pages/Home';
 import Insights from './pages/Insights';
 import Planner from './pages/Planner';
+import BingGoHome from './pages/BingGoHome';
+import BingGoArchive from './pages/BingGoArchive';
 import AppLayout from './components/AppLayout';
 import RequireAuth from './components/RequireAuth';
 import { AppProvider } from './context/AppContext';
@@ -31,6 +33,9 @@ function App() {
                 <Route path="/planner" element={<Planner />} />
                 <Route path="/bingo" element={<BingoPage />} />
                 <Route path="/bingo/:cardId" element={<BingoBoardPage />} />
+                <Route path="/binggo/home" element={<BingGoHome />} />
+                <Route path="/binggo/archive" element={<BingGoArchive />} />
+                <Route path="/binggo/:cardId" element={<BingoBoardPage />} />
                 <Route path="/search" element={<Search />} />
               </Route>
             </Route>

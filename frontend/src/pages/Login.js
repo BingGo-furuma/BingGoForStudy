@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../utils/api';
-import { useAppContext } from '../context/AppContext';
+import { ProgramTypes, useAppContext } from '../context/AppContext';
 import './Login.css';
 
 const Login = () => {
@@ -9,9 +9,10 @@ const Login = () => {
   const [form, setForm] = useState({ email: '', password: '', name: '' });
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedExperience, setSelectedExperience] = useState(ProgramTypes.STUDY);
   const navigate = useNavigate();
   const location = useLocation();
-  const { loadInitialData } = useAppContext();
+  const { loadInitialData, selectExperience } = useAppContext();
 
   const isRegister = mode === 'register';
   const title = useMemo(() => (isRegister ? 'BingGo アカウントを作成' : 'ログインして学習を始める'), [isRegister]);
@@ -32,8 +33,10 @@ const Login = () => {
         setMode('login');
       } else {
         await api.login(form.email, form.password);
-        await loadInitialData();
-        const redirectPath = location.state?.from?.pathname || '/home';
+        selectExperience(selectedExperience);
+        await loadInitialData(selectedExperience);
+        const defaultPath = selectedExperience === ProgramTypes.BINGGO ? '/binggo/home' : '/home';
+        const redirectPath = location.state?.from?.pathname || defaultPath;
         navigate(redirectPath, { replace: true });
       }
     } catch (error) {
@@ -43,15 +46,19 @@ const Login = () => {
     }
   };
 
+  const handleExperienceChange = (value) => {
+    setSelectedExperience(value);
+  };
+
   return (
     <div className="auth-container">
       <div className="auth-hero">
         <h1>BingGo!!</h1>
-        <p>学習の進捗をビンゴ形式で可視化し、志望校合格までの道のりを楽しく管理できます。</p>
+        <p>学習を後押しする <strong>Bing Go for Study</strong> と、ライフチャレンジに挑む <strong>Bing Go</strong> を自由に切り替えて楽しめます。</p>
         <ul>
-          <li>学習カードで毎日のチャレンジを選択</li>
-          <li>マスを開けてポイントとバッジを獲得</li>
-          <li>ホーム画面で志望校・支払い情報を管理</li>
+          <li>for Study: 学習カードで毎日のチャレンジを選択し、正答率でビンゴ達成</li>
+          <li>Bing Go: 7×7の月間チャレンジで季節のミッションをクリアしてポイント獲得</li>
+          <li>アプリ内でいつでもモードを変更し、同じアカウントで進捗を共有</li>
         </ul>
       </div>
       <div className="auth-panel">
@@ -93,6 +100,27 @@ const Login = () => {
               required
             />
           </label>
+          <div className="experience-selector">
+            <p>ログイン後に利用するアプリを選択してください。</p>
+            <div className="experience-selector__options">
+              <button
+                type="button"
+                className={`experience-card ${selectedExperience === ProgramTypes.STUDY ? 'experience-card--active' : ''}`}
+                onClick={() => handleExperienceChange(ProgramTypes.STUDY)}
+              >
+                <span className="experience-card__label">Bing Go for Study</span>
+                <span className="experience-card__description">学習計画とクイズでビンゴを進める学生向けモード</span>
+              </button>
+              <button
+                type="button"
+                className={`experience-card ${selectedExperience === ProgramTypes.BINGGO ? 'experience-card--active' : ''}`}
+                onClick={() => handleExperienceChange(ProgramTypes.BINGGO)}
+              >
+                <span className="experience-card__label">Bing Go</span>
+                <span className="experience-card__description">月間49個のライフチャレンジをこなしてポイント獲得</span>
+              </button>
+            </div>
+          </div>
           <button type="submit" disabled={isLoading}>
             {isLoading ? '処理中…' : isRegister ? '無料で登録' : 'ログイン'}
           </button>
