@@ -1,5 +1,5 @@
 // SplashScreen.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import './SplashScreen.css'; // ロゴデザイン用のCSS
 
 const SplashScreen = ({ onComplete }) => {

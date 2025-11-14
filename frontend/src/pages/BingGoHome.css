@@ -1,0 +1,237 @@
+.binggo-home {
+  padding: clamp(16px, 4vw, 32px);
+  display: grid;
+  gap: 24px;
+}
+
+.binggo-home__hero {
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.12), rgba(251, 191, 36, 0.12));
+  border-radius: 24px;
+  padding: 24px;
+  display: grid;
+  gap: 18px;
+  border: 1px solid rgba(251, 191, 36, 0.25);
+}
+
+.binggo-home__hero h2 {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.4vw, 2.2rem);
+  color: #b45309;
+}
+
+.binggo-home__hero p {
+  margin: 8px 0;
+  color: #92400e;
+  max-width: 520px;
+}
+
+.binggo-home__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f97316, #fbbf24);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  width: fit-content;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.binggo-home__cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(249, 115, 22, 0.25);
+}
+
+.binggo-home__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.binggo-home__summary > div {
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px 18px;
+  border: 1px solid rgba(251, 191, 36, 0.24);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.binggo-home__summary span {
+  font-size: 0.75rem;
+  color: #9a3412;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.binggo-home__summary strong {
+  font-size: 1.4rem;
+  color: #b45309;
+}
+
+.binggo-home__summary small {
+  color: #92400e;
+  font-size: 0.75rem;
+}
+
+.binggo-home__grid {
+  display: grid;
+  gap: 24px;
+}
+
+@media (min-width: 960px) {
+  .binggo-home__grid {
+    grid-template-columns: 1.2fr 1fr;
+  }
+
+  .binggo-home__grid > section:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.binggo-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  display: grid;
+  gap: 16px;
+}
+
+.binggo-card header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.binggo-card header p {
+  margin: 6px 0 0;
+  color: #475569;
+}
+
+.binggo-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.binggo-card__list li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+
+.binggo-card__index {
+  font-weight: 700;
+  color: #fb7185;
+}
+
+.binggo-card__title {
+  margin: 0;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.binggo-card__jump {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.16);
+  color: #b91c1c;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.binggo-card__empty {
+  text-align: center;
+  padding: 24px 16px;
+  color: #475569;
+  background: #f1f5f9;
+  border-radius: 14px;
+}
+
+.binggo-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.binggo-timeline li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 14px;
+}
+
+.binggo-timeline__status {
+  margin: 0 0 4px;
+  font-weight: 700;
+  color: #ea580c;
+}
+
+.binggo-timeline__status.is-passed {
+  color: #16a34a;
+}
+
+.binggo-timeline__title {
+  margin: 0;
+  color: #111827;
+}
+
+.binggo-timeline__score {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.binggo-card__grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.binggo-card__tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 16px;
+  text-decoration: none;
+  color: #1f2937;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.binggo-card__tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(148, 163, 184, 0.18);
+}
+
+.binggo-card__label {
+  font-weight: 700;
+  color: #334155;
+}
+
+@media (max-width: 640px) {
+  .binggo-card__list li {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .binggo-card__jump {
+    justify-self: flex-start;
+  }
+}

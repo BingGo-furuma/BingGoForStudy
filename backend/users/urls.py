@@ -1,12 +1,11 @@
 from django.urls import path
-from .views import RegisterView, CustomTokenObtainPairView
-from .views import ProtectedView
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView
+
+from .views import CustomTokenObtainPairView, ProfileView, RegisterView
 
 urlpatterns = [
-    path('register/', RegisterView.as_view(), name='register'),  # 新規登録エンドポイント
-    path('login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),  # ログインエンドポイント
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # トークン更新エンドポイント
-
-    path('protected/', ProtectedView.as_view(), name='protected'),  # 新しいエンドポイント
+    path('register/', RegisterView.as_view(), name='register'),
+    path('login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('profile/', ProfileView.as_view(), name='profile'),
 ]
